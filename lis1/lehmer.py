@@ -77,7 +77,7 @@ def plot_3d(data):
     ax.set_zlabel("$r_{n+2}$")
     plt.show()
 
-samples = lehman_lcg(100, L, a, x)
+samples = lehman_lcg(2000, L, a, x)
 run_stats(samples)
 plot_2d(samples)
 plot_3d(samples)
