@@ -1,0 +1,251 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{needspace}
+
+\geometry{margin=2.5cm}
+
+% Naglowki sekcji nie powinny zostawac same na koncu strony.
+\newcommand{\sekcja}[1]{%
+  \Needspace{8\baselineskip}%
+  \section*{#1}%
+  \nopagebreak[4]%
+}
+
+% Blok naglowek + krotki wstep trzyma razem na jednej stronie.
+\newcommand{\sekcjazwstep}[2]{%
+  \Needspace{10\baselineskip}%
+  \section*{#1}%
+  \nopagebreak[4]%
+  #2%
+}
+
+\widowpenalty=10000
+\clubpenalty=10000
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false
+}
+
+\title{Podstawy Symulacji Komputerowej\\Lista 2 -- zadanie 5}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\sekcjazwstep{Treść zadania}{%
+Metodą zdarzeń dyskretnych rozwiązać następujące zadanie:
+}
+
+\begin{quote}
+Zakładamy, że szkody klientów zgłaszane są według procesu Poissona
+o intensywności 10 na dzień. Kwota szkody jest zmienną losową o rozkładzie
+wykładniczym ze średnią \$1000. Firma ubezpieczeniowa otrzymuje wpłaty
+w sposób ciągły ze stałą intensywnością \$11000 na dzień. Przyjmując kapitał
+początkowy \$25000, oszacować metodą symulacji prawdopodobieństwo, że kapitał
+pozostanie dodatni przez pierwsze 365 dni.
+\end{quote}
+
+\sekcjazwstep{Model probabilistyczny}{%
+Niech $U(t)$ oznacza kapitał firmy w chwili $t$, gdzie $t\in[0,365]$.
+}
+Przyjmujemy:
+\[
+U(0)=25000.
+\]
+
+Wpłaty napływają ciągle ze stałą intensywnością:
+\[
+c=11000 \quad \text{[\$ na dzień]}.
+\]
+
+Między kolejnymi szkodami kapitał zmienia się liniowo:
+\[
+\frac{\mathrm{d}U}{\mathrm{d}t}=c,
+\]
+o ile nie wystąpi zdarzenie szkody.
+
+Zgłoszenia szkód tworzą proces Poissona o intensywności:
+\[
+\lambda=10 \quad \text{[zdarzeń na dzień]}.
+\]
+
+Oznacza to, że czasy między kolejnymi szkodami są niezależne i mają rozkład
+wykładniczy:
+\[
+T_i \sim \mathrm{Exp}(\lambda),
+\]
+przy czym średni czas między szkodami wynosi $1/\lambda=0{,}1$ dnia.
+
+Kwota pojedynczej szkody $X_i$ jest zmienną losową o rozkładzie wykładniczym
+ze średnią \$1000:
+\[
+E(X_i)=1000,
+\]
+czyli parametr skali wynosi $1000$, a gęstość:
+\[
+f(x)=\frac{1}{1000}e^{-x/1000},\qquad x>0.
+\]
+
+W chwili wystąpienia $i$-tej szkody kapitał ulega natychmiastowej redukcji:
+\[
+U(t_i^+)=U(t_i^-)-X_i.
+\]
+
+Szukane jest prawdopodobieństwo:
+\[
+p=P\big(U(t)>0 \text{ dla wszystkich } t\in[0,365]\big).
+\]
+
+\sekcjazwstep{Metoda zdarzeń dyskretnych}{%
+W metodzie zdarzeń dyskretnych symulujemy tylko chwile, w których stan systemu
+ulega zmianie. W tym modelu są to wyłącznie chwile zgłoszenia szkód.
+
+Algorytm jednej replikacji:
+}
+
+\Needspace{16\baselineskip}
+\begin{enumerate}
+    \item Ustaw $t=0$ oraz $U=25000$.
+    \item Wygeneruj odstęp do kolejnej szkody:
+    \[
+    \Delta \sim \mathrm{Exp}(\lambda).
+    \]
+    \item Jeżeli $t+\Delta>365$, dolicz wpłaty do końca roku i zakończ replikację.
+    \item W przeciwnym razie:
+    \begin{itemize}
+        \item zwiększ kapitał o wpłaty w okresie $(t,t+\Delta)$:
+        \[
+        U \leftarrow U + c\Delta;
+        \]
+        \item ustaw $t\leftarrow t+\Delta$;
+        \item wygeneruj kwotę szkody $X\sim \mathrm{Exp}(1000)$;
+        \item zmniejsz kapitał: $U\leftarrow U-X$;
+        \item jeżeli $U\le 0$, zakończ replikację wynikiem negatywnym.
+    \end{itemize}
+    \item Powtarzaj krok 2.
+\end{enumerate}
+
+Ponieważ między szkodami kapitał rośnie liniowo, minimum na każdym takim
+odcinku występuje bezpośrednio po obsłużeniu szkody. Wystarczy zatem sprawdzać
+warunek dodatniego kapitału po każdym zdarzeniu szkody.
+
+\sekcjazwstep{Implementacja}{%
+Symulację wykonano w języku Python. Poniżej przedstawiono główną funkcję
+jednej replikacji:
+}
+
+\Needspace{22\baselineskip}
+\begin{lstlisting}[language=Python]
+def symuluj_jedna_sciezke():
+    czas = 0.0
+    kapital = 25000.0
+
+    while True:
+        odstep = random.expovariate(10.0)
+        czas_szkody = czas + odstep
+
+        if czas_szkody > 365.0:
+            kapital += 11000.0 * (365.0 - czas)
+            return kapital > 0.0
+
+        kapital += 11000.0 * (czas_szkody - czas)
+        czas = czas_szkody
+
+        kwota_szkody = random.expovariate(1.0 / 1000.0)
+        kapital -= kwota_szkody
+
+        if kapital <= 0.0:
+            return False
+\end{lstlisting}
+
+Prawdopodobieństwo $p$ estymujemy metodą Monte Carlo:
+\[
+\hat{p}=\frac{1}{N}\sum_{j=1}^{N} I_j,
+\]
+gdzie $I_j=1$, jeżeli w $j$-tej replikacji kapitał pozostał dodatni przez cały
+okres $[0,365]$, a w przeciwnym razie $I_j=0$.
+
+W obliczeniach przyjęto:
+\[
+N=100000.
+\]
+
+\sekcjazwstep{Wyniki symulacji}{%
+Po wykonaniu $N=100000$ niezależnych replikacji otrzymano:
+}
+
+\Needspace{10\baselineskip}
+\[
+\begin{array}{l|r}
+\text{Wielkość} & \text{Wartość}\\
+\hline
+\text{Liczba replikacji} & 100000\\
+\text{Liczba sukcesów} & 90637\\
+\text{Liczba niepowodzeń} & 9363\\
+\text{Estymator } \hat{p} & 0{,}9064\\
+\text{95\% przedział ufności} & (0{,}9045;\ 0{,}9082)
+\end{array}
+\]
+
+Oznacza to, że w około $90{,}64\%$ symulowanych scenariuszy kapitał firmy
+pozostał dodatni przez cały rok.
+
+\sekcjazwstep{Interpretacja wyniku}{%
+Średnia liczba szkód w ciągu 365 dni wynosi około:
+}
+\[
+\lambda \cdot 365 = 10 \cdot 365 = 3650.
+\]
+
+Średni łączny koszt szkód:
+\[
+3650 \cdot 1000 = 3\,650\,000.
+\]
+
+Średni napływ wpłat w ciągu roku:
+\[
+11000 \cdot 365 = 4\,015\,000.
+\]
+
+Teoretyczna średnia zmiana kapitału (bez uwzględnienia zmienności) jest dodatnia,
+jednak duża losowość kwot pojedynczych szkód powoduje, że w części scenariuszy
+następuje bankructwo.
+
+\sekcjazwstep{Odpowiedź końcowa}{%
+Metodą zdarzeń dyskretnych oszacowano, że prawdopodobieństwo utrzymania dodatniego
+kapitału przez pierwsze 365 dni wynosi:
+}
+
+\Needspace{12\baselineskip}
+\[
+\boxed{\hat{p}\approx 0{,}9064}
+\]
+
+czyli około:
+
+\[
+\boxed{90{,}6\%}.
+\]
+
+Przy $95\%$ poziomie ufności można przyjąć przedział:
+
+\[
+\boxed{(0{,}9045;\ 0{,}9082)}.
+\]
+
+\end{document}
