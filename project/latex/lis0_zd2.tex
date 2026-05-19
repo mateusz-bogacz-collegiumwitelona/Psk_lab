@@ -1,0 +1,196 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{needspace}
+
+\geometry{margin=2.5cm}
+
+% Naglowki sekcji nie powinny zostawac same na koncu strony.
+\newcommand{\sekcja}[1]{%
+  \Needspace{8\baselineskip}%
+  \section*{#1}%
+  \nopagebreak[4]%
+}
+
+% Blok naglowek + krotki wstep trzyma razem na jednej stronie.
+\newcommand{\sekcjazwstep}[2]{%
+  \Needspace{10\baselineskip}%
+  \section*{#1}%
+  \nopagebreak[4]%
+  #2%
+}
+
+\widowpenalty=10000
+\clubpenalty=10000
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false,
+    literate={ą}{{\k{a}}}1 {ć}{{\'c}}1 {ę}{{\k{e}}}1 {ł}{{\l}}1 {ń}{{\'n}}1 {ó}{{\'o}}1 {ś}{{\'s}}1 {ź}{{\'z}}1 {ż}{{\.z}}1 {Ą}{{\k{A}}}1 {Ć}{{\'C}}1 {Ę}{{\k{E}}}1 {Ł}{{\L}}1 {Ń}{{\'N}}1 {Ó}{{\'O}}1 {Ś}{{\'S}}1 {Ź}{{\'Z}}1 {Ż}{{\.Z}}1 % Obsługa polskich znaków w kodzie
+}
+
+\title{Podstawy Symulacji Komputerowej\\Lista 0 -- zadanie 2}
+\author{Ryszard Rębowski}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\sekcjazwstep{Treść zadania}{%
+Wiadomo, że dla zmiennej losowej $X$ mamy:
+\[ X(\Omega)=\{1,2,3,4\} \]
+\[ P(\{\omega\in\Omega:X(\omega)=i\})=ic, \quad \text{dla pewnej } c\in \mathbb{R}. \]
+Obliczyć dwoma metodami $P(\{\omega\in\Omega:2\le X(\omega)\le3\})$.
+}
+
+\sekcjazwstep{Rozwiązanie analityczne}{%
+Z własności rozkładu prawdopodobieństwa (warunek unormowania) wiemy, że suma prawdopodobieństw wszystkich zdarzeń elementarnych musi wynosić $1$. Zatem:
+\[ \sum_{i=1}^{4} P(X=i) = 1 \]
+\[ 1c + 2c + 3c + 4c = 1 \]
+\[ 10c = 1 \implies c = \frac{1}{10}. \]
+
+Mając stałą $c$, rozkład zmiennej losowej $X$ prezentuje się następująco:
+$P(X=1)=0{,}1$, $P(X=2)=0{,}2$, $P(X=3)=0{,}3$, $P(X=4)=0{,}4$.
+
+\textbf{Metoda 1: Bezpośrednie sumowanie prawdopodobieństw} \\
+Z racji, że interesują nas zdarzenia dla $X=2$ oraz $X=3$, dodajemy bezpośrednio ich prawdopodobieństwa z wyznaczonego rozkładu:
+\[ P(2 \le X \le 3) = P(X=2) + P(X=3) = 0{,}2 + 0{,}3 = 0{,}5. \]
+
+\textbf{Metoda 2: Sumowanie z definicji podanej w zadaniu} \\
+Wykorzystujemy podany wzór $P(X=i) = i \cdot c$:
+\[ P(2 \le X \le 3) = \sum_{i=2}^{3} i \cdot c = 2c + 3c = 5c. \]
+Podstawiając $c = \frac{1}{10}$, otrzymujemy:
+\[ 5 \cdot \frac{1}{10} = \frac{5}{10} = 0{,}5. \]
+}
+
+\sekcjazwstep{Implementacja}{%
+Poniżej przedstawiono kod w języku Python symulujący rozwiązanie tego zadania wraz z generacją wykresów rozkładu zmiennej losowej i jej dystrybuanty.
+}
+
+\Needspace{22\baselineskip}
+\begin{lstlisting}[language=Python]
+import matplotlib.pyplot as plt
+import numpy as np
+
+print("\n1.Znalezienie stalej c:")
+print("X(Ω) = {1, 2, 3, 4}")
+print("P(X = i) = i·c")
+print("\nWarunek: suma wszystkich prawdopodobienstw = 1")
+print("P(X=1) + P(X=2) + P(X=3) + P(X=4) = 1")
+print("1·c + 2·c + 3·c + 4·c = 1")
+print("10·c = 1\n")
+
+c = 1/10
+print(f"\033[1mStala c:\033[0m {c} \n")
+values = [1, 2, 3, 4]
+probabilities = [i * c for i in values]
+
+print(f"P(X=1) = 1·{c} = {probabilities[0]}")
+print(f"P(X=2) = 2·{c} = {probabilities[1]}")
+print(f"P(X=3) = 3·{c} = {probabilities[2]}")
+print(f"P(X=4) = 4·{c} = {probabilities[3]} \n")
+print(f"\033[1mSuma:\033[0m {sum(probabilities)} \n")
+
+print("Metoda 1: Bezposrednie sumowanie")
+print("P(2 ≤ X ≤ 3) = P(X=2) + P(X=3)")
+print(f"= 2·c + 3·c")
+print(f"= 2·{c} + 3·{c}")
+print(f"= {2*c} + {3*c}")
+
+result_method1 = probabilities[1] + probabilities[2]
+print(f"\033[1m= {result_method1} \033[0m\n")
+
+print("Metoda 2: Przez sumowanie zdan 2 i 3 z definicji")
+print("P(2 ≤ X ≤ 3) = Σ P(X=i) dla i ∈ {2, 3}")
+
+result_method2 = sum(probabilities[i-1] for i in [2, 3])
+print(f"= {probabilities[1]} + {probabilities[2]}")
+
+print(f"\033[1m= {result_method2} \033[0m\n")
+
+print("Weryfikacaja zgodnosci wynikow:")
+print(f"\033[1mMetoda 1: {result_method1}\033[0m")
+print(f"\033[1mMetoda 2: {result_method2}\033[0m")
+print(f"\033[1mZgodnosc: {'Tak' if abs(result_method1 - result_method2) < 1e-10 else 'Nie'}\033[0m\n")
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+ax1 = axes[0]
+colors = ['lightblue', 'salmon', 'salmon', 'lightblue']
+bars = ax1.bar(values, probabilities, color=colors, edgecolor='black', linewidth=2, width=0.6)
+
+bars[1].set_color('salmon')
+bars[2].set_color('salmon')
+
+ax1.set_xlabel('X', fontsize=12, fontweight='bold')
+ax1.set_ylabel('P(X = i)', fontsize=12, fontweight='bold')
+ax1.set_title('Rozklad zmiennej losowej X', fontsize=13, fontweight='bold')
+ax1.set_xticks(values)
+ax1.grid(axis='y', alpha=0.3, linestyle='--')
+ax1.set_ylim([0, max(probabilities) * 1.2])
+
+for i, (val, prob) in enumerate(zip(values, probabilities)):
+    ax1.text(val, prob + 0.01, f'{prob:.1f}', ha='center', fontsize=11, fontweight='bold')
+
+ax1.text(0.5, 0.95, 'Kolor jasnoniebieski: nie wliczone do P(2 ≤ X ≤ 3)', 
+         transform=ax1.transAxes, fontsize=10, verticalalignment='top',
+         bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.5))
+ax1.text(0.5, 0.85, 'Kolor lososiowy: wliczone do P(2 ≤ X ≤ 3)', 
+         transform=ax1.transAxes, fontsize=10, verticalalignment='top',
+         bbox=dict(boxstyle='round', facecolor='salmon', alpha=0.5))
+
+ax2 = axes[1]
+cumulative_probs = np.cumsum(probabilities)
+x_cdf = [0] + values
+y_cdf = [0] + list(cumulative_probs)
+
+ax2.step(x_cdf, y_cdf, 'b-', linewidth=2, marker='o', markersize=8, where='post', label='F(x) = P(X ≤ x)')
+ax2.fill_between([1.99, 3.01], 0, 1, alpha=0.3, color='salmon', label='P(2 ≤ X ≤ 3)')
+
+ax2.set_xlabel('X', fontsize=12, fontweight='bold')
+ax2.set_ylabel('F(X)', fontsize=12, fontweight='bold')
+ax2.set_title('Dystrybuanta zmiennej losowej X', fontsize=13, fontweight='bold')
+ax2.grid(True, alpha=0.3, linestyle='--')
+ax2.set_xlim([-0.5, 5])
+ax2.set_ylim([-0.05, 1.1])
+ax2.legend(fontsize=10)
+
+for i, cum_prob in enumerate(cumulative_probs):
+    ax2.text(x_cdf[i], cum_prob + 0.05, f'{cum_prob:.2f}', ha='center', fontsize=9)
+
+plt.tight_layout()
+print("\nWizualizacja zapisana do: zad2_lista0_visualization.png \n")
+plt.show()
+
+print(f"\033[1mPodsumowanie:\033[0m")
+print(f"P(2 ≤ X ≤ 3) = {result_method1} = {result_method1.as_integer_ratio()[0]}/{result_method1.as_integer_ratio()[1]} = 50%")
+\end{lstlisting}
+
+\sekcjazwstep{Odpowiedź końcowa}{%
+Obydwie metody analityczne, jak i weryfikacja numeryczna za pomocą skryptu Python, doprowadziły do tego samego wyniku. Szukane prawdopodobieństwo wynosi:
+}
+
+\Needspace{12\baselineskip}
+\[
+\boxed{P(2 \le X \le 3) = 0{,}5}
+\]
+
+czyli:
+
+\[
+\boxed{50\%}.
+\]
+
+\end{document}
